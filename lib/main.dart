@@ -181,8 +181,8 @@ class _CafeHomePageState extends State<CafeHomePage> {
   // ====== shake для смены темы ======
 
   void _initShakeDetection() {
-    const double shakeThreshold = 15.0;
-    const int minMillisBetweenShakes = 1000;
+    const double shakeThreshold = 2.0;
+    const int minMillisBetweenShakes = 700;
 
     _accelerometerSub = accelerometerEvents.listen((event) {
       final gX = event.x / 9.81;
