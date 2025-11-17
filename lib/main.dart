@@ -358,6 +358,23 @@ Future<void> _requestMotionPermission() async {
                 ),
               ),
             ),
+
+            if (kIsWeb)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TextButton(
+                  onPressed: _requestMotionPermission,
+                  child: Text(
+                    'Включить смену темы при встряхивании',
+                style: TextStyle(
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                  color: Colors.black.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+              ),
+              
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
