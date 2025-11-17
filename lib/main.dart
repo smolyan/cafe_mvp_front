@@ -2,6 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// эти два только для web, но их можно смело подключать
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -207,6 +213,30 @@ class _CafeHomePageState extends State<CafeHomePage> {
       _currentThemeIndex = (_currentThemeIndex + 1) % _themes.length;
     });
   }
+
+// ====== запрос разрешений на движение (iOS Safari / Яндекс) ======
+
+Future<void> _requestMotionPermission() async {
+  if (!kIsWeb) return;
+
+  try {
+    final deviceMotionEvent =
+        js_util.getProperty(html.window, 'DeviceMotionEvent');
+
+    if (deviceMotionEvent != null &&
+        js_util.hasProperty(deviceMotionEvent, 'requestPermission')) {
+      final result = await js_util.promiseToFuture<String>(
+        js_util.callMethod(deviceMotionEvent, 'requestPermission', []),
+      );
+
+      debugPrint('Motion permission: $result');
+    } else {
+      debugPrint('DeviceMotionEvent.requestPermission not available');
+    }
+  } catch (e) {
+    debugPrint('Error requesting motion permission: $e');
+  }
+}
 
   // ====== онлайновость (connectivity_plus 6.x) ======
 
