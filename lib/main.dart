@@ -76,9 +76,6 @@ class _CafeHomePageState extends State<CafeHomePage> {
 
   int _currentThemeIndex = 0;
 
-  // пока заглушка, позже можно посчитать по времени последнего обновления
-  int _minutesSinceUpdate = 14;
-
   // новая переменная: дата меню из menu.json
   String? _menuDate;
 
@@ -190,7 +187,7 @@ class _CafeHomePageState extends State<CafeHomePage> {
     const double shakeThreshold = 2.0;
     const int minMillisBetweenShakes = 700;
 
-    _accelerometerSub = accelerometerEvents.listen((event) {
+    _accelerometerSub = accelerometerEventStream().listen((event) {
       final gX = event.x / 9.81;
       final gY = event.y / 9.81;
       final gZ = event.z / 9.81;
@@ -308,24 +305,6 @@ Future<void> _requestMotionPermission() async {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      Text(
-                        '$_minutesSinceUpdate',
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black.withOpacity(0.7),
-                          height: 1.0,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'минут назад обновлено',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black.withOpacity(0.45),
-                        ),
-                      ),
                       const SizedBox(height: 24),
                       SizedBox(
                         height: 360,
@@ -358,23 +337,6 @@ Future<void> _requestMotionPermission() async {
                 ),
               ),
             ),
-
-            if (kIsWeb)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: TextButton(
-                  onPressed: _requestMotionPermission,
-                  child: Text(
-                    'Включить смену темы при встряхивании',
-                style: TextStyle(
-                  fontSize: 12,
-                  decoration: TextDecoration.underline,
-                  color: Colors.black.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-              ),
-              
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -416,68 +378,75 @@ class _BusinessLunchCard extends StatelessWidget {
 
   const _BusinessLunchCard({required this.businessLunch});
 
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Бизнес-ланч',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.8),
-            ),
+    @override
+    Widget build(BuildContext context) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 760,
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Состав:',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...businessLunch.items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '• ',
+          child: _GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Бизнес-ланч',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Состав:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...businessLunch.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '• ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black.withOpacity(0.7),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black.withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Text(
+                    '${businessLunch.price} ${businessLunch.currency}',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black.withOpacity(0.7),
-                    ),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black.withOpacity(0.85),
                   ),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black.withOpacity(0.8),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-          const Spacer(),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              '${businessLunch.price} ${businessLunch.currency}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black.withOpacity(0.85),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -488,39 +457,47 @@ class _MenuCard extends StatelessWidget {
 
   const _MenuCard({required this.categories});
 
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Общее меню',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.8),
+      @override
+      Widget build(BuildContext context) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 760, // можно 800–960, если захочешь потом подправить
+          ),
+          child: _GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Общее меню',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _CategoryBlock(category: category),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _CategoryBlock(category: category),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
   }
-}
+
 
 class _CategoryBlock extends StatelessWidget {
   final MenuCategory category;
