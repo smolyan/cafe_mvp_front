@@ -107,89 +107,79 @@ class _CafeHomePageState extends State<CafeHomePage> {
     super.dispose();
   }
 
-   // ====== cache-busting для HTTP ======
-
-  Uri _cacheBustingUri(String base) {
-    final uri = Uri.parse(base);
-    final params = Map<String, String>.from(uri.queryParameters);
-    params['_ts'] = DateTime.now().millisecondsSinceEpoch.toString();
-    return uri.replace(queryParameters: params);
-  }
-
   // ====== загрузка меню и бизнес-ланча с бэка + кеш ======
 
-    Future<void> _loadData() async {
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
     final prefs = await SharedPreferences.getInstance();
 
     try {
-      final menuResp = await http.get(_cacheBustingUri(kMenuUrl));
-      final businessResp = await http.get(_cacheBustingUri(kBusinessLunchUrl));
+      final menuResp = await http.get(Uri.parse(kMenuUrl));
+      final businessResp = await http.get(Uri.parse(kBusinessLunchUrl));
 
-      if (menuResp.statusCode == 200) {
-        final decoded = jsonDecode(utf8.decode(menuResp.bodyBytes));
-        final menu = MenuResponse.fromJson(decoded);
-
-        // сохраняем JSON в кэш
-        await prefs.setString(kMenuCacheKey, menuResp.body);
-        await prefs.setString('cached_menu_date', menu.date);
-
-        setState(() {
-          _categories = menu.categories;
-          _menuDate = menu.date;
-        });
-      } else {
-        throw Exception('Ошибка загрузки меню: ${menuResp.statusCode}');
+      if (menuResp.statusCode != 200) {
+        throw Exception('Menu status: ${menuResp.statusCode}');
+      }
+      if (businessResp.statusCode != 200) {
+        throw Exception('Business lunch status: ${businessResp.statusCode}');
       }
 
-      if (businessResp.statusCode == 200) {
-        final decoded = jsonDecode(utf8.decode(businessResp.bodyBytes));
-        final bl = BusinessLunch.fromJson(decoded);
+      final menuJson = jsonDecode(menuResp.body) as Map<String, dynamic>;
+      final businessJson =
+          jsonDecode(businessResp.body) as Map<String, dynamic>;
 
-        await prefs.setString(kBusinessLunchCacheKey, businessResp.body);
+      final menu = MenuResponse.fromJson(menuJson);
+      final lunch = BusinessLunch.fromJson(businessJson);
 
-        setState(() {
-          _businessLunch = bl;
-        });
-      } else {
-        throw Exception('Ошибка загрузки бизнес-ланча: ${businessResp.statusCode}');
-      }
+      // кешируем исходный JSON
+      await prefs.setString(kMenuCacheKey, menuResp.body);
+      await prefs.setString(kBusinessLunchCacheKey, businessResp.body);
 
       setState(() {
+        _categories = menu.categories;
+        _businessLunch = lunch;
+        _menuDate = menu.date; // <<< сохраняем дату из JSON
+        _isLoading = false;
         _loadError = null;
-        _isLoading = false;
       });
-    } catch (e) {
-      // ошибок нет? Берём из кеша
+    } catch (_) {
+      // Не получилось с сети — пробуем кеш
       final cachedMenu = prefs.getString(kMenuCacheKey);
-      final cachedBusiness = prefs.getString(kBusinessLunchCacheKey);
+      final cachedLunch = prefs.getString(kBusinessLunchCacheKey);
 
-      if (cachedMenu != null) {
-        final decoded = jsonDecode(cachedMenu);
-        final menu = MenuResponse.fromJson(decoded);
+      if (cachedMenu != null && cachedLunch != null) {
+        try {
+          final menuJson = jsonDecode(cachedMenu) as Map<String, dynamic>;
+          final businessJson = jsonDecode(cachedLunch) as Map<String, dynamic>;
 
+          final menu = MenuResponse.fromJson(menuJson);
+          final lunch = BusinessLunch.fromJson(businessJson);
+
+          setState(() {
+            _categories = menu.categories;
+            _businessLunch = lunch;
+            _menuDate = menu.date; // <<< и при загрузке из кеша тоже
+            _isLoading = false;
+            _loadError = null;
+          });
+        } catch (_) {
+          setState(() {
+            _isLoading = false;
+            _loadError = 'Не удалось разобрать сохранённое меню';
+          });
+        }
+      } else {
         setState(() {
-          _categories = menu.categories;
-          _menuDate = menu.date;
+          _isLoading = false;
+          _loadError = 'Не удалось загрузить меню. Проверьте соединение.';
         });
       }
-
-      if (cachedBusiness != null) {
-        final decoded = jsonDecode(cachedBusiness);
-        final bl = BusinessLunch.fromJson(decoded);
-
-        setState(() {
-          _businessLunch = bl;
-        });
-      }
-
-      setState(() {
-        _loadError =
-            'Не удалось загрузить меню. Проверьте соединение.';
-        _isLoading = false;
-      });
     }
   }
-
 
   // ====== shake для смены темы ======
 
