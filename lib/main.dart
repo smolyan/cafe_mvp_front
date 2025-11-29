@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -605,7 +606,7 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-class _BubblesBackground extends StatelessWidget {
+class _BubblesBackground extends StatefulWidget {
   final Color baseColor;
   final Color accentColor;
 
@@ -615,52 +616,101 @@ class _BubblesBackground extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Чуть разные оттенки от базового фона
-    final lighter = baseColor.withValues(alpha: 0.9);
-    final light = baseColor.withValues(alpha: 0.7);
+  State<_BubblesBackground> createState() => _BubblesBackgroundState();
+}
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [baseColor, lighter],
-        ),
-      ),
-      child: Stack(
-        children: [
-          _bubble(top: -80, left: -40, size: 260, color: light),
-          _bubble(
-            top: 40,
-            right: -60,
-            size: 220,
-            color: accentColor.withValues(alpha: 0.35),
+class _BubblesBackgroundState extends State<_BubblesBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10), // было 20, сделаем быстрее
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = widget.baseColor;
+    final accentColor = widget.accentColor;
+
+    final lighter = baseColor.withValues(alpha: 0.95);
+    final light = baseColor.withValues(alpha: 0.8);
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [baseColor, lighter],
+            ),
           ),
-          _bubble(
-            bottom: -60,
-            left: -30,
-            size: 220,
-            color: accentColor.withValues(alpha: 0.45),
+          child: Stack(
+            children: [
+              _animatedBubble(
+                progress: t,
+                phase: 0.0,
+                top: -80,
+                left: -40,
+                size: 260,
+                color: light,
+              ),
+              _animatedBubble(
+                progress: t,
+                phase: 0.8,
+                top: 40,
+                right: -60,
+                size: 220,
+                color: accentColor.withValues(alpha: 0.45),
+              ),
+              _animatedBubble(
+                progress: t,
+                phase: 1.6,
+                bottom: -60,
+                left: -30,
+                size: 220,
+                color: accentColor.withValues(alpha: 0.55),
+              ),
+              _animatedBubble(
+                progress: t,
+                phase: 2.4,
+                bottom: -40,
+                right: -40,
+                size: 260,
+                color: accentColor.withValues(alpha: 0.5),
+              ),
+              _animatedBubble(
+                progress: t,
+                phase: 3.2,
+                top: 140,
+                left: 60,
+                size: 140,
+                color: accentColor.withValues(alpha: 0.4),
+              ),
+            ],
           ),
-          _bubble(
-            bottom: -40,
-            right: -40,
-            size: 260,
-            color: accentColor.withValues(alpha: 0.4),
-          ),
-          _bubble(
-            top: 140,
-            left: 60,
-            size: 140,
-            color: accentColor.withValues(alpha: 0.3),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _bubble({
+  Widget _animatedBubble({
+    required double progress,
+    required double phase,
     double? top,
     double? left,
     double? right,
@@ -668,20 +718,29 @@ class _BubblesBackground extends StatelessWidget {
     required double size,
     required Color color,
   }) {
+    final wave = math.sin(2 * math.pi * (progress + phase));
+
+    // усилим дыхание
+    final scale = 1.0 + 0.12 * wave; // было 0.04
+    final offsetShift = 18.0 * wave; // было 6.0
+
     return Positioned(
-      top: top,
-      left: left,
-      right: right,
-      bottom: bottom,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0.0)],
-            center: Alignment.center,
-            radius: 0.9,
+      top: top != null ? top + offsetShift : null,
+      left: left != null ? left + offsetShift : null,
+      right: right != null ? right - offsetShift : null,
+      bottom: bottom != null ? bottom - offsetShift : null,
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [color, color.withValues(alpha: 0.0)],
+              center: Alignment.center,
+              radius: 0.9,
+            ),
           ),
         ),
       ),
