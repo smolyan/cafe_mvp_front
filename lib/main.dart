@@ -74,6 +74,15 @@ class _CafeHomePageState extends State<CafeHomePage> {
     PastelTheme(background: Color(0xFFEFE9FF), footer: Color(0xFFF8F3FF)),
   ];
 
+  // Акцентные цвета под 4 темы — фиолетовая, оранжевая, зелёная, синяя
+  // Используются в пузырьковом фоне.
+  final List<Color> _accentColors = const [
+    Color(0xFFB388FF), // фиолетовый
+    Color(0xFFFFB74D), // оранжевый
+    Color(0xFF81C784), // зелёный
+    Color(0xFF64B5F6), // синий
+  ];
+
   int _currentThemeIndex = 0;
 
   // новая переменная: дата меню из menu.json
@@ -211,29 +220,31 @@ class _CafeHomePageState extends State<CafeHomePage> {
     });
   }
 
-// ====== запрос разрешений на движение (iOS Safari / Яндекс) ======
+  // ====== запрос разрешений на движение (iOS Safari / Яндекс) ======
 
-Future<void> _requestMotionPermission() async {
-  if (!kIsWeb) return;
+  Future<void> _requestMotionPermission() async {
+    if (!kIsWeb) return;
 
-  try {
-    final deviceMotionEvent =
-        js_util.getProperty(html.window, 'DeviceMotionEvent');
-
-    if (deviceMotionEvent != null &&
-        js_util.hasProperty(deviceMotionEvent, 'requestPermission')) {
-      final result = await js_util.promiseToFuture<String>(
-        js_util.callMethod(deviceMotionEvent, 'requestPermission', []),
+    try {
+      final deviceMotionEvent = js_util.getProperty(
+        html.window,
+        'DeviceMotionEvent',
       );
 
-      debugPrint('Motion permission: $result');
-    } else {
-      debugPrint('DeviceMotionEvent.requestPermission not available');
+      if (deviceMotionEvent != null &&
+          js_util.hasProperty(deviceMotionEvent, 'requestPermission')) {
+        final result = await js_util.promiseToFuture<String>(
+          js_util.callMethod(deviceMotionEvent, 'requestPermission', []),
+        );
+
+        debugPrint('Motion permission: $result');
+      } else {
+        debugPrint('DeviceMotionEvent.requestPermission not available');
+      }
+    } catch (e) {
+      debugPrint('Error requesting motion permission: $e');
     }
-  } catch (e) {
-    debugPrint('Error requesting motion permission: $e');
   }
-}
 
   // ====== онлайновость (connectivity_plus 6.x) ======
 
@@ -262,191 +273,129 @@ Future<void> _requestMotionPermission() async {
     final pastel = _themes[_currentThemeIndex];
 
     return Scaffold(
-      backgroundColor: pastel.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (!_isOnline)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                color: Colors.black.withOpacity(0.05),
-                child: Text(
-                  'Сейчас вы офлайн — показываем сохранённое меню.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.black.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_menuDate != null) ...[
-                        Text(
-                          'Меню на $_menuDate',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black.withOpacity(0.6),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        height: 360,
-                        child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : _loadError != null
-                            ? Center(
-                                child: Text(
-                                  _loadError!,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black.withOpacity(0.6),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              )
-                            : PageView(
-                                controller: _pageController,
-                                children: [
-                                  if (_businessLunch != null)
-                                    _BusinessLunchCard(
-                                      businessLunch: _businessLunch!,
-                                    ),
-                                  _MenuCard(categories: _categories),
-                                ],
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Фоновый градиент с пузырями
+          Positioned.fill(
+            child: _BubblesBackground(
+              baseColor: pastel.background,
+              accentColor: _accentColors[_currentThemeIndex],
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: pastel.footer,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Text(
-                'Экспериментальное приложение. Возможны ошибки. '
-                'Пожелания и предложения: +7 915 213 93 99',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black.withOpacity(0.65),
-                  height: 1.3,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ====== UI-компоненты ======
-
-class _BusinessLunchCard extends StatelessWidget {
-  final BusinessLunch businessLunch;
-
-  const _BusinessLunchCard({required this.businessLunch});
-
-    @override
-    Widget build(BuildContext context) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 760,
           ),
-          child: _GlassCard(
+
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Бизнес-ланч',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.8),
+                if (!_isOnline)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: Colors.black.withValues(alpha: 0.05),
+                    child: Text(
+                      'Сейчас вы офлайн — показываем сохранённое меню.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.black.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Состав:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...businessLunch.items.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black.withOpacity(0.7),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black.withOpacity(0.8),
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_menuDate != null) ...[
+                            Text(
+                              'Меню на $_menuDate',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black.withValues(alpha: 0.6),
+                              ),
+                              textAlign: TextAlign.center,
                             ),
+                            const SizedBox(height: 8),
+                          ],
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 360,
+                            child: _isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : _loadError != null
+                                ? Center(
+                                    child: Text(
+                                      _loadError!,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : PageView(
+                                    controller: _pageController,
+                                    children: [
+                                      if (_businessLunch != null)
+                                        _BusinessLunchCard(
+                                          businessLunch: _businessLunch!,
+                                        ),
+                                      _MenuCard(categories: _categories),
+                                    ],
+                                  ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
-                Align(
-                  alignment: Alignment.bottomRight,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: pastel.footer,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
                   child: Text(
-                    '${businessLunch.price} ${businessLunch.currency}',
+                    'Экспериментальное приложение. Возможны ошибки. '
+                    'Пожелания и предложения: +7 915 213 93 99',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black.withOpacity(0.85),
+                      fontSize: 12,
+                      color: Colors.black.withValues(alpha: 0.65),
+                      height: 1.3,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -457,47 +406,123 @@ class _MenuCard extends StatelessWidget {
 
   const _MenuCard({required this.categories});
 
-      @override
-      Widget build(BuildContext context) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 760, // можно 800–960, если захочешь потом подправить
-          ),
-          child: _GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Общее меню',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.8),
-                  ),
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 760, // можно 800–960, если захочешь потом подправить
+        ),
+        child: _GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Общее меню',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black.withValues(alpha: 0.8),
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CategoryBlock(category: category),
-                      );
-                    },
-                  ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _CategoryBlock(category: category),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
   }
+}
 
+class _BusinessLunchCard extends StatelessWidget {
+  final BusinessLunch businessLunch;
+
+  const _BusinessLunchCard({super.key, required this.businessLunch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: _GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Бизнес-ланч',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Состав:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...businessLunch.items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '• ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  '${businessLunch.price} ${businessLunch.currency}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _CategoryBlock extends StatelessWidget {
   final MenuCategory category;
@@ -514,7 +539,7 @@ class _CategoryBlock extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.black.withOpacity(0.7),
+            color: Colors.black.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 4),
@@ -528,7 +553,7 @@ class _CategoryBlock extends StatelessWidget {
                     dish.title,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black.withOpacity(0.8),
+                      color: Colors.black.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
@@ -537,7 +562,7 @@ class _CategoryBlock extends StatelessWidget {
                   '${dish.price} ${dish.currency}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.black.withOpacity(0.65),
+                    color: Colors.black.withValues(alpha: 0.65),
                   ),
                 ),
               ],
@@ -559,23 +584,107 @@ class _GlassCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 18,
             spreadRadius: 2,
             offset: const Offset(0, 10),
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _BubblesBackground extends StatelessWidget {
+  final Color baseColor;
+  final Color accentColor;
+
+  const _BubblesBackground({
+    required this.baseColor,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Чуть разные оттенки от базового фона
+    final lighter = baseColor.withValues(alpha: 0.9);
+    final light = baseColor.withValues(alpha: 0.7);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [baseColor, lighter],
+        ),
+      ),
+      child: Stack(
+        children: [
+          _bubble(top: -80, left: -40, size: 260, color: light),
+          _bubble(
+            top: 40,
+            right: -60,
+            size: 220,
+            color: accentColor.withValues(alpha: 0.35),
+          ),
+          _bubble(
+            bottom: -60,
+            left: -30,
+            size: 220,
+            color: accentColor.withValues(alpha: 0.45),
+          ),
+          _bubble(
+            bottom: -40,
+            right: -40,
+            size: 260,
+            color: accentColor.withValues(alpha: 0.4),
+          ),
+          _bubble(
+            top: 140,
+            left: 60,
+            size: 140,
+            color: accentColor.withValues(alpha: 0.3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bubble({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    required double size,
+    required Color color,
+  }) {
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0.0)],
+            center: Alignment.center,
+            radius: 0.9,
+          ),
+        ),
+      ),
     );
   }
 }
