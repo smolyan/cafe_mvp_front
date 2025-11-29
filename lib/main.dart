@@ -317,15 +317,26 @@ class _CafeHomePageState extends State<CafeHomePage> {
                         children: [
                           if (_menuDate != null) ...[
                             Text(
-                              'Меню на $_menuDate',
+                              'Меню столовой',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black.withValues(alpha: 0.6),
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black.withValues(alpha: 0.75),
+                                height: 1.2,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4),
+                            Text(
+                              _menuDate!,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black.withValues(alpha: 0.55),
+                                letterSpacing: 0.3,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ],
                           const SizedBox(height: 24),
                           SizedBox(
