@@ -329,7 +329,7 @@ class _CafeHomePageState extends State<CafeHomePage> {
                           ],
                           const SizedBox(height: 24),
                           SizedBox(
-                            height: 360,
+                            height: 400,
                             child: _isLoading
                                 ? const Center(
                                     child: CircularProgressIndicator(),
@@ -578,29 +578,53 @@ class _CategoryBlock extends StatelessWidget {
 class _GlassCard extends StatelessWidget {
   final Widget child;
 
-  const _GlassCard({required this.child});
+  const _GlassCard({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      margin: const EdgeInsets.only(bottom: 32),
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(24),
+
+        // 🔹 Глубокий стеклянный фон
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.75),
+            Colors.white.withValues(alpha: 0.30),
+          ],
+        ),
+
+        // 🔹 Объёмная, мягкая тень
         boxShadow: [
+          // Основная тень снизу
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 28,
+            spreadRadius: -4,
+            offset: const Offset(0, 8),
           ),
+
+          // Лёгкая подсветка сверху, создаёт глубину
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.8),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
+            color: Colors.white.withValues(alpha: 0.6),
+            blurRadius: 20,
+            spreadRadius: -6,
+            offset: const Offset(0, -4),
           ),
         ],
+
+        // Тонкая стеклянная рамка
+        border: Border.all(
+          width: 1.4,
+          color: Colors.white.withValues(alpha: 0.45),
+        ),
       ),
+
+      padding: const EdgeInsets.all(20),
       child: child,
     );
   }
