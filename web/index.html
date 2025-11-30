@@ -49,6 +49,18 @@
 </head>
 
 <body>
+
+  <script>
+    (function () {
+      // Если в адресе нет query-параметров — добавляем ?share=1,
+      // чтобы Share / Поделиться всегда использовал URL с правильным превью
+      if (!window.location.search) {
+        var newUrl = window.location.pathname + '?share=1' + window.location.hash;
+        window.history.replaceState(null, '', newUrl);
+      }
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 
