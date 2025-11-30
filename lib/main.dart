@@ -364,8 +364,12 @@ class _CafeHomePageState extends State<CafeHomePage> {
                                       if (_businessLunch != null)
                                         _BusinessLunchCard(
                                           businessLunch: _businessLunch!,
+                                          accentColor: pastel.background,
                                         ),
-                                      _MenuCard(categories: _categories),
+                                      _MenuCard(
+                                        categories: _categories,
+                                        accentColor: pastel.background,
+                                      ),
                                     ],
                                   ),
                           ),
@@ -415,8 +419,9 @@ class _CafeHomePageState extends State<CafeHomePage> {
 
 class _MenuCard extends StatelessWidget {
   final List<MenuCategory> categories;
+  final Color accentColor;
 
-  const _MenuCard({required this.categories});
+  const _MenuCard({required this.categories, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -439,16 +444,19 @@ class _MenuCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _CategoryBlock(category: category),
-                    );
-                  },
+                child: _PastelScrollbar(
+                  accentColor: accentColor,
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _CategoryBlock(category: category),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -461,8 +469,13 @@ class _MenuCard extends StatelessWidget {
 
 class _BusinessLunchCard extends StatelessWidget {
   final BusinessLunch businessLunch;
+  final Color accentColor;
 
-  const _BusinessLunchCard({super.key, required this.businessLunch});
+  const _BusinessLunchCard({
+    super.key,
+    required this.businessLunch,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -490,33 +503,47 @@ class _BusinessLunchCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              ...businessLunch.items.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '• ',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black.withValues(alpha: 0.7),
+
+              // Прокручиваемая часть с блюдами + скроллбар
+              Expanded(
+                child: _PastelScrollbar(
+                  accentColor: accentColor,
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: businessLunch.items.length,
+                    itemBuilder: (context, index) {
+                      final item = businessLunch.items[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '• ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                item,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
-              const Spacer(),
+
+              const SizedBox(height: 8),
+
               Align(
                 alignment: Alignment.bottomRight,
                 child: Text(
@@ -776,6 +803,68 @@ class _BubblesBackgroundState extends State<_BubblesBackground>
               center: Alignment.center,
               radius: 0.9,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PastelScrollbar extends StatefulWidget {
+  final Color accentColor;
+  final Widget child;
+
+  const _PastelScrollbar({required this.accentColor, required this.child});
+
+  @override
+  State<_PastelScrollbar> createState() => _PastelScrollbarState();
+}
+
+class _PastelScrollbarState extends State<_PastelScrollbar> {
+  late final ScrollController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color _darker(Color c, [double factor = 0.45]) {
+    final hsl = HSLColor.fromColor(c);
+    final l = (hsl.lightness * factor).clamp(0.0, 1.0);
+    return hsl.withLightness(l).toColor();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color thumbColor = _darker(widget.accentColor, 0.45);
+
+    return ScrollConfiguration(
+      // Отключаем все "авто-скроллбары" Flutter для этого поддерева
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+      child: RawScrollbar(
+        controller: _controller,
+        thumbVisibility: true,
+        trackVisibility: false, // без трека
+        interactive: true,
+
+        thickness: 6,
+        radius: const Radius.circular(999),
+        thumbColor: thumbColor,
+        crossAxisMargin: 2, // небольшой отступ от края карточки
+
+        child: PrimaryScrollController(
+          controller: _controller,
+          child: Padding(
+            // Сдвигаем контент влево, чтобы ползунок не накладывался на RUB
+            padding: const EdgeInsets.only(right: 24),
+            child: widget.child,
           ),
         ),
       ),
