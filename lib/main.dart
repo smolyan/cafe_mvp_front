@@ -90,7 +90,8 @@ class _CafeHomePageState extends State<CafeHomePage> {
 
   int _currentThemeIndex = 0;
 
-  // новая переменная: дата меню из menu.json
+  int _currentPage = 0;
+
   String? _menuDate;
 
   StreamSubscription<AccelerometerEvent>? _accelerometerSub;
@@ -109,9 +110,48 @@ class _CafeHomePageState extends State<CafeHomePage> {
   @override
   void initState() {
     super.initState();
+
+    _pageController.addListener(() {
+      final page = _pageController.page?.round() ?? 0;
+      if (page != _currentPage) {
+        setState(() {
+          _currentPage = page;
+        });
+      }
+    });
+
     _initShakeDetection();
     _initConnectivity();
     _loadData();
+  }
+
+  Widget _buildPageIndicators(PastelTheme pastel) {
+    int totalPages = 1; // всегда есть общая плитка меню
+    if (_businessLunch != null) totalPages++;
+    if (_breakfastCategories.isNotEmpty) totalPages++;
+
+    // Цвет активного кружка — как у ползунка / акцентной темы
+    final Color activeColor = _accentColors[_currentThemeIndex];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(totalPages, (index) {
+        final isActive = index == _currentPage;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 10 : 6,
+          height: isActive ? 10 : 6,
+          decoration: BoxDecoration(
+            color: isActive
+                ? activeColor // активный — как ползунок
+                : Colors.black.withValues(alpha: 0.18), // неактивные — серые
+            shape: BoxShape.circle,
+          ),
+        );
+      }),
+    );
   }
 
   @override
@@ -369,47 +409,54 @@ class _CafeHomePageState extends State<CafeHomePage> {
                             ),
                           ],
                           const SizedBox(height: 24),
-                          SizedBox(
-                            height: 400,
-                            child: _isLoading
-                                ? const Center(
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : _loadError != null
-                                ? Center(
-                                    child: Text(
-                                      _loadError!,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black.withValues(
-                                          alpha: 0.6,
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                height: 400,
+                                child: _isLoading
+                                    ? const Center(
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : _loadError != null
+                                    ? Center(
+                                        child: Text(
+                                          _loadError!,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                          ),
+                                          textAlign: TextAlign.center,
                                         ),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )
-                                : PageView(
-                                    controller: _pageController,
-                                    children: [
-                                      if (_businessLunch != null)
-                                        _BusinessLunchCard(
-                                          businessLunch: _businessLunch!,
-                                          accentColor: pastel.background,
-                                        ),
+                                      )
+                                    : PageView(
+                                        controller: _pageController,
+                                        children: [
+                                          if (_businessLunch != null)
+                                            _BusinessLunchCard(
+                                              businessLunch: _businessLunch!,
+                                              accentColor: pastel.background,
+                                            ),
 
-                                      // 🔹 новая плитка с завтраками
-                                      if (_breakfastCategories.isNotEmpty)
-                                        _BreakfastCard(
-                                          categories: _breakfastCategories,
-                                          accentColor: pastel.background,
-                                        ),
+                                          if (_breakfastCategories.isNotEmpty)
+                                            _BreakfastCard(
+                                              categories: _breakfastCategories,
+                                              accentColor: pastel.background,
+                                            ),
 
-                                      _MenuCard(
-                                        categories: _categories,
-                                        accentColor: pastel.background,
+                                          _MenuCard(
+                                            categories: _categories,
+                                            accentColor: pastel.background,
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (!_isLoading && _loadError == null)
+                                _buildPageIndicators(pastel),
+                            ],
                           ),
                         ],
                       ),
