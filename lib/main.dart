@@ -175,7 +175,9 @@ class _CafeHomePageState extends State<CafeHomePage> {
         _isLoading = false;
         _loadError = null;
       });
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('LOAD_ERROR: $e');
+      debugPrint('STACKTRACE: $st');
       // Не получилось с сети — пробуем кеш
       final cachedMenu = prefs.getString(kMenuCacheKey);
       final cachedLunch = prefs.getString(kBusinessLunchCacheKey);
@@ -601,8 +603,9 @@ class _BusinessLunchCard extends StatelessWidget {
 
 class _BreakfastCard extends StatelessWidget {
   final List<MenuCategory> categories;
+  final Color accentColor;
 
-  const _BreakfastCard({required this.categories});
+  const _BreakfastCard({required this.categories, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -623,12 +626,13 @@ class _BreakfastCard extends StatelessWidget {
               Text(
                 'Доступно в первой половине дня',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Colors.black.withOpacity(0.6),
                 ),
               ),
               const SizedBox(height: 12),
               Expanded(
                 child: _PastelScrollbar(
+                  accentColor: accentColor,
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     itemCount: categories.length,

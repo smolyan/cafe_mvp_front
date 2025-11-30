@@ -45,7 +45,7 @@ class MenuResponse {
     }).toList();
 
     return MenuResponse(
-      date: json['дата'] as String,
+      date: (json['дата'] as String?) ?? '',
       source: json['источник'] as String? ?? '',
       categories: categories,
     );
