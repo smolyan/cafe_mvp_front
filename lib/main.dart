@@ -22,13 +22,17 @@ import 'models/menu_models.dart';
 const String kMenuUrl = 'https://cafemvp-production.up.railway.app/menu';
 const String kBusinessLunchUrl =
     'https://cafemvp-production.up.railway.app/business-lunch';
+const String kBreakfastUrl =
+    'https://cafemvp-production.up.railway.app/breakfast';
 
 // для локального теста можно временно заменить на:
 // const String kMenuUrl = 'http://localhost:8080/menu';
 // const String kBusinessLunchUrl = 'http://localhost:8080/business-lunch';
+// const String kBreakfastUrl = 'http://localhost:8080/breakfast';
 
 const String kMenuCacheKey = 'menu_cache_json';
 const String kBusinessLunchCacheKey = 'business_lunch_cache_json';
+const String kBreakfastCacheKey = 'breakfast_cache_json';
 
 void main() {
   runApp(const CafeMvpApp());
@@ -96,6 +100,7 @@ class _CafeHomePageState extends State<CafeHomePage> {
   bool _isOnline = true;
 
   BusinessLunch? _businessLunch;
+  List<MenuCategory> _breakfastCategories = [];
   List<MenuCategory> _categories = [];
 
   bool _isLoading = true;
@@ -117,8 +122,7 @@ class _CafeHomePageState extends State<CafeHomePage> {
     super.dispose();
   }
 
-  // ====== загрузка меню и бизнес-ланча с бэка + кеш ======
-
+  // ====== загрузка меню, бизнес-ланча и завтраков с бэка + кеш ======
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -130,12 +134,17 @@ class _CafeHomePageState extends State<CafeHomePage> {
     try {
       final menuResp = await http.get(Uri.parse(kMenuUrl));
       final businessResp = await http.get(Uri.parse(kBusinessLunchUrl));
+      final breakfastResp = await http.get(Uri.parse(kBreakfastUrl));
 
       if (menuResp.statusCode != 200) {
         throw Exception('Menu status: ${menuResp.statusCode}');
       }
       if (businessResp.statusCode != 200) {
         throw Exception('Business lunch status: ${businessResp.statusCode}');
+      }
+      // breakfast можно считать опциональным: 200 — есть, 404 — нет
+      if (breakfastResp.statusCode != 200 && breakfastResp.statusCode != 404) {
+        throw Exception('Breakfast status: ${breakfastResp.statusCode}');
       }
 
       final menuJson = jsonDecode(menuResp.body) as Map<String, dynamic>;
@@ -145,14 +154,24 @@ class _CafeHomePageState extends State<CafeHomePage> {
       final menu = MenuResponse.fromJson(menuJson);
       final lunch = BusinessLunch.fromJson(businessJson);
 
-      // кешируем исходный JSON
+      MenuResponse? breakfast;
+      if (breakfastResp.statusCode == 200) {
+        final breakfastJson =
+            jsonDecode(breakfastResp.body) as Map<String, dynamic>;
+        breakfast = MenuResponse.fromJson(breakfastJson);
+
+        await prefs.setString(kBreakfastCacheKey, breakfastResp.body);
+      }
+
+      // кешируем исходный JSON для меню и бизнес-ланча
       await prefs.setString(kMenuCacheKey, menuResp.body);
       await prefs.setString(kBusinessLunchCacheKey, businessResp.body);
 
       setState(() {
         _categories = menu.categories;
         _businessLunch = lunch;
-        _menuDate = menu.date; // <<< сохраняем дату из JSON
+        _breakfastCategories = breakfast?.categories ?? [];
+        _menuDate = menu.date; // для breakfast date будет "", это нормально
         _isLoading = false;
         _loadError = null;
       });
@@ -160,6 +179,7 @@ class _CafeHomePageState extends State<CafeHomePage> {
       // Не получилось с сети — пробуем кеш
       final cachedMenu = prefs.getString(kMenuCacheKey);
       final cachedLunch = prefs.getString(kBusinessLunchCacheKey);
+      final cachedBreakfast = prefs.getString(kBreakfastCacheKey);
 
       if (cachedMenu != null && cachedLunch != null) {
         try {
@@ -169,10 +189,18 @@ class _CafeHomePageState extends State<CafeHomePage> {
           final menu = MenuResponse.fromJson(menuJson);
           final lunch = BusinessLunch.fromJson(businessJson);
 
+          MenuResponse? breakfast;
+          if (cachedBreakfast != null) {
+            final breakfastJson =
+                jsonDecode(cachedBreakfast) as Map<String, dynamic>;
+            breakfast = MenuResponse.fromJson(breakfastJson);
+          }
+
           setState(() {
             _categories = menu.categories;
             _businessLunch = lunch;
-            _menuDate = menu.date; // <<< и при загрузке из кеша тоже
+            _breakfastCategories = breakfast?.categories ?? [];
+            _menuDate = menu.date;
             _isLoading = false;
             _loadError = null;
           });
@@ -366,6 +394,14 @@ class _CafeHomePageState extends State<CafeHomePage> {
                                           businessLunch: _businessLunch!,
                                           accentColor: pastel.background,
                                         ),
+
+                                      // 🔹 новая плитка с завтраками
+                                      if (_breakfastCategories.isNotEmpty)
+                                        _BreakfastCard(
+                                          categories: _breakfastCategories,
+                                          accentColor: pastel.background,
+                                        ),
+
                                       _MenuCard(
                                         categories: _categories,
                                         accentColor: pastel.background,
@@ -552,6 +588,57 @@ class _BusinessLunchCard extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.black.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BreakfastCard extends StatelessWidget {
+  final List<MenuCategory> categories;
+
+  const _BreakfastCard({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: _GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Завтраки',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Доступно в первой половине дня',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.black.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: _PastelScrollbar(
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _CategoryBlock(category: category),
+                      );
+                    },
                   ),
                 ),
               ),
