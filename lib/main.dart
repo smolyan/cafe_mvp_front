@@ -854,6 +854,36 @@ class _BubblesBackgroundState extends State<_BubblesBackground>
                 size: 140,
                 color: accentColor.withValues(alpha: 0.4),
               ),
+              _animatedBubble(
+                progress: t,
+                phase: 4.0,
+                top: -120,
+                left: 80,
+                size: 320,
+                color: baseColor.withValues(alpha: 0.5),
+              ),
+
+              // Новый пузырь — средний по центру (даёт красивую дымку)
+              _animatedBubble(
+                progress: t,
+                phase: 2.7,
+                top: 160,
+                left: null,
+                right: null,
+                bottom: null,
+                size: 180,
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+
+              // Новый пузырь — маленький яркий (подсветка)
+              _animatedBubble(
+                progress: t,
+                phase: 3.6,
+                bottom: 90,
+                right: 50,
+                size: 120,
+                color: accentColor.withValues(alpha: 0.35),
+              ),
             ],
           ),
         );
