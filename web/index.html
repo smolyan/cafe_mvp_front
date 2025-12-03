@@ -46,9 +46,160 @@
   <meta name="twitter:title" content="К Обеду Ложка" />
   <meta name="twitter:description" content="Актуальное меню столовой и бизнес-ланчи." />
   <meta name="twitter:image" content="https://cafemvpfront-production.up.railway.app/og-preview-wa.jpg" />
+
+  <style>
+    /* Фоновый градиент + общая обертка */
+    #custom-loader {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top left, #f5e9f2 0%, #f8f3ff 45%, #fdf7ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+
+    /* Плавающие пузырьки на фоне */
+    .loader-bubbles {
+      position: absolute;
+      inset: -100px;
+      pointer-events: none;
+    }
+
+    .loader-bubbles .bubble {
+      position: absolute;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, rgba(197, 140, 255, 0.55), rgba(197, 140, 255, 0.05));
+      filter: blur(2px);
+      opacity: 0.9;
+      animation: float 18s infinite alternate ease-in-out;
+    }
+
+    .bubble-1 {
+      width: 320px;
+      height: 320px;
+      top: -80px;
+      left: -40px;
+    }
+
+    .bubble-2 {
+      width: 260px;
+      height: 260px;
+      top: 120px;
+      right: -40px;
+      animation-delay: -4s;
+    }
+
+    .bubble-3 {
+      width: 240px;
+      height: 240px;
+      bottom: -60px;
+      left: -20px;
+      animation-delay: -8s;
+    }
+
+    .bubble-4 {
+      width: 280px;
+      height: 280px;
+      bottom: -80px;
+      right: -60px;
+      animation-delay: -12s;
+    }
+
+    .bubble-5 {
+      width: 180px;
+      height: 180px;
+      top: 170px;
+      left: 30%;
+      animation-delay: -2s;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translate3d(0, 0, 0) scale(0.96);
+        opacity: 0.75;
+      }
+
+      50% {
+        transform: translate3d(12px, -14px, 0) scale(1.05);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate3d(-8px, 10px, 0) scale(0.98);
+        opacity: 0.9;
+      }
+    }
+
+    /* Стеклянная карточка по центру */
+    .loader-card {
+      position: relative;
+      padding: 24px 32px;
+      min-width: 260px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow:
+        0 18px 40px rgba(120, 70, 180, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      text-align: center;
+    }
+
+    .loader-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: rgba(55, 35, 95, 0.85);
+      margin-bottom: 6px;
+    }
+
+    .loader-text {
+      font-size: 16px;
+      font-weight: 500;
+      color: #7a45c2;
+      letter-spacing: 0.04em;
+      animation: loaderTextPulse 1.4s infinite;
+    }
+
+    @keyframes loaderTextPulse {
+      0% {
+        opacity: 0.4;
+        transform: translateY(0);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateY(-2px);
+      }
+
+      100% {
+        opacity: 0.4;
+        transform: translateY(0);
+      }
+    }
+  </style>
+
 </head>
 
 <body>
+
+  <div id="custom-loader">
+    <div class="loader-bubbles">
+      <span class="bubble bubble-1"></span>
+      <span class="bubble bubble-2"></span>
+      <span class="bubble bubble-3"></span>
+      <span class="bubble bubble-4"></span>
+      <span class="bubble bubble-5"></span>
+    </div>
+
+    <div class="loader-card">
+      <div class="loader-title">К Обеду Ложка</div>
+      <div class="loader-text" id="loader-text">Варим</div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -59,6 +210,28 @@
         window.history.replaceState(null, '', newUrl);
       }
     })();
+  </script>
+
+  <script>
+    const loaderWords = ["Варим", "Жарим", "Замешиваем", "Печём"];
+    let loaderIndex = 0;
+
+    // Меняем фразу по кругу
+    setInterval(() => {
+      const el = document.getElementById("loader-text");
+      if (!el) return;
+      loaderIndex = (loaderIndex + 1) % loaderWords.length;
+      el.textContent = loaderWords[loaderIndex];
+    }, 1300);
+
+    // Убираем лоудер, когда отрисован первый кадр Flutter
+    window.addEventListener("flutter-first-frame", () => {
+      const loader = document.getElementById("custom-loader");
+      if (!loader) return;
+      loader.style.transition = "opacity 0.5s ease";
+      loader.style.opacity = "0";
+      setTimeout(() => loader.remove(), 600);
+    });
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
