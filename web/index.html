@@ -133,37 +133,67 @@
       }
     }
 
-    /* Стеклянная карточка по центру */
-    .loader-card {
+    /* Центральный пульсирующий круг */
+    .loader-circle {
       position: relative;
-      padding: 24px 32px;
-      min-width: 260px;
-      border-radius: 28px;
-      background: rgba(255, 255, 255, 0.74);
+      width: min(52vw, 280px);
+      height: min(52vw, 280px);
+      max-width: 320px;
+      max-height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%,
+          rgba(197, 140, 255, 0.75),
+          rgba(197, 140, 255, 0.28),
+          rgba(247, 236, 255, 0.0));
       box-shadow:
-        0 18px 40px rgba(120, 70, 180, 0.18),
+        0 20px 45px rgba(120, 70, 180, 0.24),
         0 0 0 1px rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      animation: loaderCircleBreathe 2.6s infinite ease-in-out;
     }
 
+    @keyframes loaderCircleBreathe {
+      0% {
+        transform: scale(0.94);
+      }
+
+      50% {
+        transform: scale(1.06);
+      }
+
+      100% {
+        transform: scale(0.94);
+      }
+    }
+
+    /* Заголовок внутри круга ("К Обеду Ложка") */
     .loader-title {
-      font-size: 18px;
+      font-size: clamp(16px, 4.3vw, 20px);
       font-weight: 600;
-      letter-spacing: 0.02em;
-      color: rgba(55, 35, 95, 0.85);
+      letter-spacing: 0.03em;
+      color: rgba(40, 20, 70, 0.9);
       margin-bottom: 6px;
+      text-align: center;
+      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
     }
 
+    /* Меняющийся текст (Варим, Жарим, …) */
     .loader-text {
-      font-size: 16px;
+      font-size: clamp(14px, 3.6vw, 18px);
       font-weight: 500;
-      color: #7a45c2;
-      letter-spacing: 0.04em;
+      color: #5f2bb5;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
       animation: loaderTextPulse 1.4s infinite;
     }
 
+    /* Анимация пульса текста */
     @keyframes loaderTextPulse {
       0% {
         opacity: 0.4;
@@ -195,7 +225,7 @@
       <span class="bubble bubble-5"></span>
     </div>
 
-    <div class="loader-card">
+    <div class="loader-circle">
       <div class="loader-title">К Обеду Ложка</div>
       <div class="loader-text" id="loader-text">Варим</div>
     </div>
