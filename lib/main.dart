@@ -70,7 +70,7 @@ class CafeHomePage extends StatefulWidget {
 }
 
 class _CafeHomePageState extends State<CafeHomePage> {
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(viewportFraction: 0.9);
 
   final List<PastelTheme> _themes = const [
     PastelTheme(background: Color(0xFFF5E9F2), footer: Color(0xFFFFF4FB)),
@@ -433,22 +433,41 @@ class _CafeHomePageState extends State<CafeHomePage> {
                                       )
                                     : PageView(
                                         controller: _pageController,
+                                        physics: const BouncingScrollPhysics(),
                                         children: [
                                           if (_businessLunch != null)
-                                            _BusinessLunchCard(
-                                              businessLunch: _businessLunch!,
-                                              accentColor: pastel.background,
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                  ),
+                                              child: _BusinessLunchCard(
+                                                businessLunch: _businessLunch!,
+                                                accentColor: pastel.background,
+                                              ),
                                             ),
 
                                           if (_breakfastCategories.isNotEmpty)
-                                            _BreakfastCard(
-                                              categories: _breakfastCategories,
-                                              accentColor: pastel.background,
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                  ),
+                                              child: _BreakfastCard(
+                                                categories:
+                                                    _breakfastCategories,
+                                                accentColor: pastel.background,
+                                              ),
                                             ),
 
-                                          _MenuCard(
-                                            categories: _categories,
-                                            accentColor: pastel.background,
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            child: _MenuCard(
+                                              categories: _categories,
+                                              accentColor: pastel.background,
+                                            ),
                                           ),
                                         ],
                                       ),
