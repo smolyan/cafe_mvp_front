@@ -531,16 +531,21 @@ class _MenuCard extends StatelessWidget {
               Expanded(
                 child: _PastelScrollbar(
                   accentColor: accentColor,
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CategoryBlock(category: category),
-                      );
-                    },
+                  child: _FadedScroll(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                      ), // чтобы текст не прилипал к краям
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _CategoryBlock(category: category),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -548,6 +553,33 @@ class _MenuCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FadedScroll extends StatelessWidget {
+  final Widget child;
+
+  const _FadedScroll({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (Rect bounds) {
+        return const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent, // верх плавно исчезает
+            Colors.black, // середина без изменений
+            Colors.black, // середина без изменений
+            Colors.transparent, // низ плавно исчезает
+          ],
+          stops: [0.0, 0.06, 0.94, 1.0],
+        ).createShader(bounds);
+      },
+      blendMode: BlendMode.dstIn,
+      child: child,
     );
   }
 }
@@ -680,16 +712,19 @@ class _BreakfastCard extends StatelessWidget {
               Expanded(
                 child: _PastelScrollbar(
                   accentColor: accentColor,
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _CategoryBlock(category: category),
-                      );
-                    },
+                  child: _FadedScroll(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _CategoryBlock(category: category),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
