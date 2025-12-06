@@ -714,32 +714,36 @@ class _CategoryBlock extends StatelessWidget {
         Text(
           category.name,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black.withValues(alpha: 0.7),
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.black.withValues(alpha: 0.85),
+            height: 1.2,
           ),
         ),
         const SizedBox(height: 4),
         ...category.dishes.map(
           (dish) => Padding(
-            padding: const EdgeInsets.only(bottom: 2),
-            child: Row(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    dish.title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black.withValues(alpha: 0.8),
-                    ),
+                // Название блюда
+                Text(
+                  dish.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withValues(alpha: 0.9),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(height: 4),
+                // Цена под названием — крупнее и ярче
                 Text(
-                  '${dish.price} ${dish.currency}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black.withValues(alpha: 0.65),
+                  '${dish.price} ₽',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3A3A3C),
                   ),
                 ),
               ],
